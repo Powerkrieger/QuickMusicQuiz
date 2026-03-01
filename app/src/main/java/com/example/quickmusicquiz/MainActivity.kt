@@ -381,7 +381,7 @@ fun PlayingScreen(
             onClick  = onTogglePause,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isPlaybackPaused) "▶  Resume" else "⏸  Pause")
+            Text(if (isPlaybackPaused) "▶️  Resume" else "⏸️  Pause")
         }
         Spacer(Modifier.height(8.dp))
         TextButton(
@@ -469,7 +469,7 @@ fun CountingDownScreen(
                 onClick  = onToggleCountdownPause,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (isTimerPaused) "▶  Resume Countdown" else "⏸  Pause Countdown")
+                Text(if (isTimerPaused) "▶️  Resume Countdown" else "⏸️  Pause Countdown")
             }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
@@ -485,7 +485,7 @@ fun CountingDownScreen(
                 onClick  = onTogglePlayback,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (isPlaybackPaused) "▶  Resume" else "⏸  Pause")
+                Text(if (isPlaybackPaused) "▶️  Resume" else "⏸  Pause")
             }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
