@@ -16,6 +16,9 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 import kotlin.coroutines.resume
 
+/** Lightweight holder for a curated Spotify playlist entry. */
+data class SpotifyPlaylist(val id: String, val name: String, val category: String)
+
 /** Lightweight data holder for a Spotify track. */
 data class TrackInfo(
     val uri: String,

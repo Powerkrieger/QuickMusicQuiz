@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,11 +22,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -153,12 +158,14 @@ class MainActivity : ComponentActivity() {
  */
 @Composable
 fun QuizApp(viewModel: MainViewModel) {
-    val gameState         by viewModel.gameState.collectAsState()
-    val isRemoteConnected by viewModel.isAppRemoteConnected.collectAsState()
-    val authUrl           by viewModel.authUrl.collectAsState()
-    val isPlaybackPaused  by viewModel.isPlaybackPaused.collectAsState()
-    val isTimerPaused     by viewModel.isTimerPaused.collectAsState()
-    val albumArt          by viewModel.albumArt.collectAsState()
+    val gameState          by viewModel.gameState.collectAsState()
+    val isRemoteConnected  by viewModel.isAppRemoteConnected.collectAsState()
+    val authUrl            by viewModel.authUrl.collectAsState()
+    val isPlaybackPaused   by viewModel.isPlaybackPaused.collectAsState()
+    val isTimerPaused      by viewModel.isTimerPaused.collectAsState()
+    val albumArt           by viewModel.albumArt.collectAsState()
+    val selectedPlaylistId  by viewModel.selectedPlaylistId.collectAsState()
+    val customPlaylistInput by viewModel.customPlaylistInput.collectAsState()
 
     val context = LocalContext.current
 
@@ -177,9 +184,11 @@ fun QuizApp(viewModel: MainViewModel) {
             is GameState.NotConnected   -> NotConnectedScreen(onConnect = { viewModel.startAuth() })
             is GameState.Authenticating -> AuthenticatingScreen()
             is GameState.Connected      -> ConnectedScreen(
-                viewModel         = viewModel,
-                isRemoteConnected = isRemoteConnected,
-                errorMessage      = state.errorMessage
+                viewModel           = viewModel,
+                isRemoteConnected   = isRemoteConnected,
+                errorMessage        = state.errorMessage,
+                selectedPlaylistId  = selectedPlaylistId,
+                customPlaylistInput = customPlaylistInput
             )
             is GameState.LoadingTrack   -> LoadingScreen()
             is GameState.Playing        -> PlayingScreen(
@@ -254,23 +263,80 @@ fun AuthenticatingScreen() {
 fun ConnectedScreen(
     viewModel: MainViewModel,
     isRemoteConnected: Boolean,
-    errorMessage: String?
+    errorMessage: String?,
+    selectedPlaylistId: String?,
+    customPlaylistInput: String
 ) {
     // remember + mutableStateOf: local UI state that survives recomposition.
     // Initialized from the ViewModel so values persist across rounds.
-    var clipDuration   by remember { mutableStateOf(viewModel.clipDurationSeconds) }
-    var fromBeginning  by remember { mutableStateOf(viewModel.startFromBeginning) }
+    var clipDuration  by remember { mutableStateOf(viewModel.clipDurationSeconds) }
+    var fromBeginning by remember { mutableStateOf(viewModel.startFromBeginning) }
+
+    // Group the static curated list by category once per composition.
+    val grouped = remember { viewModel.playlists.groupBy { it.category } }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 32.dp, vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Quick Music Quiz", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(Modifier.height(32.dp))
+
+        // ── Playlist selection ────────────────────────────────────────────────────
+        Text("Playlist", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            LazyColumn(Modifier.fillMaxSize()) {
+                grouped.forEach { (category, items) ->
+                    // Category header row
+                    item(key = category) {
+                        Text(
+                            text     = category,
+                            style    = MaterialTheme.typography.labelMedium,
+                            color    = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 4.dp)
+                        )
+                    }
+                    items(items, key = { it.id }) { playlist ->
+                        val isSelected = playlist.id == selectedPlaylistId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                                    else androidx.compose.ui.graphics.Color.Transparent
+                                )
+                                .clickable { viewModel.selectPlaylist(playlist.id) }
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                        ) {
+                            Text(playlist.name, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // ── Custom playlist URL / ID ───────────────────────────────────────────────
+        OutlinedTextField(
+            value         = customPlaylistInput,
+            onValueChange = { viewModel.setCustomPlaylistInput(it) },
+            label         = { Text("Or paste a playlist URL") },
+            singleLine    = true,
+            modifier      = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(24.dp))
 
         // ── Clip duration ─────────────────────────────────────────────────────────
         Text("Clip Duration", style = MaterialTheme.typography.titleMedium)
@@ -322,7 +388,7 @@ fun ConnectedScreen(
         // ── Start button ──────────────────────────────────────────────────────────
         Button(
             onClick  = { viewModel.startRound() },
-            enabled  = isRemoteConnected,
+            enabled  = isRemoteConnected && selectedPlaylistId != null,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Start Round")

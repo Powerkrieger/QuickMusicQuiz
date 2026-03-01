@@ -1,6 +1,7 @@
 package com.example.quickmusicquiz
 
 import android.app.Application
+import android.content.Context
 import android.graphics.Bitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -75,11 +76,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val authManager     = SpotifyAuthManager(application)
     val playbackManager = SpotifyPlaybackManager(application, authManager)  // authManager used for album year lookups
 
-    // ─── TODO: Set your playlist ID ───────────────────────────────────────────────────
-    // Open the playlist in Spotify, share it, and copy the ID from the URL.
-    // Example URL: https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6
-    //                                                   ^^^^^^^^^^^^^^^^^^^^^^^ this part
-    private val playlistId = "37i9dQZF1DX4WYpdgoIcn6"
+    // Persists clip duration, start position, and the last selected playlist across restarts.
+    private val configPrefs = application.getSharedPreferences("quiz_config", Context.MODE_PRIVATE)
 
     // ─── Observable state (UI layer collects these) ───────────────────────────────────
 
@@ -106,6 +104,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _albumArt = MutableStateFlow<Bitmap?>(null)
     val albumArt: StateFlow<Bitmap?> = _albumArt.asStateFlow()
 
+    // Curated playlist catalogue shown on the config screen.
+    val playlists: List<SpotifyPlaylist> = CURATED_PLAYLISTS
+
+    private val _selectedPlaylistId = MutableStateFlow(configPrefs.getString("selected_playlist_id", null))
+    val selectedPlaylistId: StateFlow<String?> = _selectedPlaylistId.asStateFlow()
+
+    private val _customPlaylistInput = MutableStateFlow(configPrefs.getString("custom_playlist_input", "") ?: "")
+    val customPlaylistInput: StateFlow<String> = _customPlaylistInput.asStateFlow()
+
     // One-shot URL event: MainActivity observes this and opens a browser tab.
     // Cleared by onAuthUrlConsumed() immediately after the browser is opened.
     private val _authUrl = MutableStateFlow<String?>(null)
@@ -113,14 +120,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // ─── User-selected options ────────────────────────────────────────────────────────
 
-    var clipDurationSeconds: Int = 5
+    var clipDurationSeconds: Int = configPrefs.getInt("clip_duration", 5)
         private set
 
-    var startFromBeginning: Boolean = true
+    var startFromBeginning: Boolean = configPrefs.getBoolean("start_from_beginning", true)
         private set
 
-    fun setClipDuration(seconds: Int)      { clipDurationSeconds  = seconds }
-    fun setStartFromBeginning(value: Boolean) { startFromBeginning = value }
+    fun setClipDuration(seconds: Int) {
+        clipDurationSeconds = seconds
+        configPrefs.edit().putInt("clip_duration", seconds).apply()
+    }
+
+    fun setStartFromBeginning(value: Boolean) {
+        startFromBeginning = value
+        configPrefs.edit().putBoolean("start_from_beginning", value).apply()
+    }
+
+    /** Selects a playlist from the curated list and clears any custom URL input. */
+    fun selectPlaylist(id: String) {
+        _selectedPlaylistId.value = id
+        _customPlaylistInput.value = ""
+        configPrefs.edit()
+            .putString("selected_playlist_id", id)
+            .putString("custom_playlist_input", "")
+            .apply()
+    }
+
+    /** Updates the custom URL/ID field. Extracts the playlist ID if the input is valid. */
+    fun setCustomPlaylistInput(text: String) {
+        _customPlaylistInput.value = text
+        val id = extractPlaylistId(text)
+        _selectedPlaylistId.value = id
+        configPrefs.edit()
+            .putString("custom_playlist_input", text)
+            .putString("selected_playlist_id", id)
+            .apply()
+    }
+
+    private fun extractPlaylistId(input: String): String? {
+        val s = input.trim()
+        // https://open.spotify.com/playlist/ID?si=...
+        Regex("""spotify\.com/playlist/([A-Za-z0-9]+)""").find(s)
+            ?.let { return it.groupValues[1] }
+        // spotify:playlist:ID
+        Regex("""spotify:playlist:([A-Za-z0-9]+)""").find(s)
+            ?.let { return it.groupValues[1] }
+        // bare ID: Spotify IDs are base-62, typically 22 chars
+        if (s.matches(Regex("[A-Za-z0-9]{15,30}"))) return s
+        return null
+    }
 
     // ─── Job tracking ─────────────────────────────────────────────────────────────────
 
@@ -231,6 +279,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // viewModelScope: the coroutine is cancelled automatically when the ViewModel
         // is cleared (i.e. when the Activity is permanently finished).
         roundJob = viewModelScope.launch {
+            val playlistId = _selectedPlaylistId.value
+            if (playlistId == null) {
+                _gameState.value = GameState.Connected(errorMessage = "Please select a playlist first")
+                return@launch
+            }
+
             _gameState.value = GameState.LoadingTrack
 
             // Start shuffle playback of the playlist via App Remote, then read
@@ -349,3 +403,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         playbackManager.disconnect()
     }
 }
+
+// ─── Curated playlist catalogue ───────────────────────────────────────────────────────
+//
+// IDs are taken from the share URL: open.spotify.com/playlist/{ID}
+// Verify/update them if Spotify retires a playlist.
+
+private fun playlist(id: String, name: String, category: String) =
+    SpotifyPlaylist(id, name, category)
+
+val CURATED_PLAYLISTS: List<SpotifyPlaylist> = listOf(
+
+    // ── Decades ───────────────────────────────────────────────────────────────────────
+    playlist("37i9dQZF1DWTJ7xPn4vNaz", "All Out 70s",   "Decades"),
+    playlist("37i9dQZF1DX4UtSsGT1Sbe", "All Out 80s",   "Decades"),
+    playlist("37i9dQZF1DXbTxeAdrVG2l", "All Out 90s",   "Decades"),
+    playlist("37i9dQZF1DX4o1oenSJRJd", "All Out 2000s", "Decades"),
+    playlist("37i9dQZF1DX5Ejj0EkURtP", "All Out 2010s", "Decades"),
+    playlist("37i9dQZF1DX2kiBW15EFZJ", "All Out 2020s", "Decades"),
+
+    // ── Pop ───────────────────────────────────────────────────────────────────────────
+    playlist("37i9dQZF1DXcBWIGoYBM5M", "Today's Top Hits", "Pop"),
+    playlist("37i9dQZF1DX4dyzvuaRJ0n", "mint",             "Pop"),
+    playlist("37i9dQZF1DWTl4y3vgJOXW", "Pop Rising",       "Pop"),
+
+    // ── Rock ──────────────────────────────────────────────────────────────────────────
+    playlist("37i9dQZF1DWXRqgorJj26U", "Rock Classics",  "Rock"),
+    playlist("37i9dQZF1DXdwmD2GFJpNs", "All New Rock",   "Rock"),
+
+    // ── Hip-Hop ───────────────────────────────────────────────────────────────────────
+    playlist("37i9dQZF1DX0XUsuxWHRQd", "Rap Caviar",      "Hip-Hop"),
+    playlist("37i9dQZF1DX2vIgwty3mBs", "Most Necessary",  "Hip-Hop"),
+
+    // ── R&B ───────────────────────────────────────────────────────────────────────────
+    playlist("37i9dQZF1DX4SBhb3fqCJd", "Are & Be",       "R&B"),
+    playlist("37i9dQZF1DXca6e9l1WLEF", "R&B Classics",   "R&B"),
+
+    // ── Electronic ────────────────────────────────────────────────────────────────────
+    playlist("37i9dQZF1DXaXB8fQg7xoQ", "Dance Hits",         "Electronic"),
+    playlist("37i9dQZF1DX8tZsk88tuoI", "Electronic Rising",  "Electronic"),
+
+    // ── Country ───────────────────────────────────────────────────────────────────────
+    playlist("37i9dQZF1DX1lVhptIYRda", "Hot Country",     "Country"),
+    playlist("37i9dQZF1DXjdUTt6GnWCp", "Country Classics","Country"),
+)
