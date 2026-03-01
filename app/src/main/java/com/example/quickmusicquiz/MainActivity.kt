@@ -168,32 +168,49 @@ fun QuizApp(viewModel: MainViewModel) {
         viewModel.onAuthUrlConsumed()
     }
 
-    when (val state = gameState) {
-        is GameState.NotConnected   -> NotConnectedScreen(onConnect = { viewModel.startAuth() })
-        is GameState.Authenticating -> AuthenticatingScreen()
-        is GameState.Connected      -> ConnectedScreen(
-            viewModel         = viewModel,
-            isRemoteConnected = isRemoteConnected,
-            errorMessage      = state.errorMessage
-        )
-        is GameState.LoadingTrack   -> LoadingScreen()
-        is GameState.Playing        -> PlayingScreen(
-            state            = state,
-            isPlaybackPaused = isPlaybackPaused,
-            onTogglePause    = { if (isPlaybackPaused) viewModel.resumeGame() else viewModel.pauseGame() },
-            onSkipToAnswer   = { viewModel.skipToAnswer() }
-        )
-        is GameState.CountingDown   -> CountingDownScreen(
-            state                  = state,
-            isTimerPaused          = isTimerPaused,
-            isPlaybackPaused       = isPlaybackPaused,
-            albumArt               = albumArt,
-            onToggleCountdownPause = { viewModel.toggleCountdownPause() },
-            onTogglePlayback       = { viewModel.togglePlayback() },
-            onReveal               = { viewModel.revealAnswer() },
-            onRestart              = { viewModel.restartTrack() },
-            onSkip                 = { viewModel.skipToNextRound() }
-        )
+    val showMenuButton = gameState is GameState.LoadingTrack
+                      || gameState is GameState.Playing
+                      || gameState is GameState.CountingDown
+
+    Box(Modifier.fillMaxSize()) {
+        when (val state = gameState) {
+            is GameState.NotConnected   -> NotConnectedScreen(onConnect = { viewModel.startAuth() })
+            is GameState.Authenticating -> AuthenticatingScreen()
+            is GameState.Connected      -> ConnectedScreen(
+                viewModel         = viewModel,
+                isRemoteConnected = isRemoteConnected,
+                errorMessage      = state.errorMessage
+            )
+            is GameState.LoadingTrack   -> LoadingScreen()
+            is GameState.Playing        -> PlayingScreen(
+                state            = state,
+                isPlaybackPaused = isPlaybackPaused,
+                onTogglePause    = { if (isPlaybackPaused) viewModel.resumeGame() else viewModel.pauseGame() },
+                onSkipToAnswer   = { viewModel.skipToAnswer() }
+            )
+            is GameState.CountingDown   -> CountingDownScreen(
+                state                  = state,
+                isTimerPaused          = isTimerPaused,
+                isPlaybackPaused       = isPlaybackPaused,
+                albumArt               = albumArt,
+                onToggleCountdownPause = { viewModel.toggleCountdownPause() },
+                onTogglePlayback       = { viewModel.togglePlayback() },
+                onReveal               = { viewModel.revealAnswer() },
+                onRestart              = { viewModel.restartTrack() },
+                onSkip                 = { viewModel.skipToNextRound() }
+            )
+        }
+
+        if (showMenuButton) {
+            TextButton(
+                onClick  = { viewModel.backToMenu() },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 40.dp, start = 8.dp)
+            ) {
+                Text("← Menu")
+            }
+        }
     }
 }
 

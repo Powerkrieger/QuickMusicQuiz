@@ -324,6 +324,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _gameState.value = GameState.CountingDown(track, secondsRemaining = 0, isRevealed = true)
     }
 
+    /** Cancels everything and returns to the configuration screen. */
+    fun backToMenu() {
+        roundJob?.cancel()
+        countdownJob?.cancel()
+        _isPaused.value = false
+        _isPlaybackPaused.value = false
+        _albumArt.value = null
+        currentTrack = null
+        playbackManager.pause()
+        _gameState.value = GameState.Connected()
+    }
+
     /** Cancels the current round and immediately starts a new one. */
     fun skipToNextRound() {
         startRound()
