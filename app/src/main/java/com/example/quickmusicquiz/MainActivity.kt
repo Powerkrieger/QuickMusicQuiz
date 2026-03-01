@@ -234,6 +234,8 @@ fun NotConnectedScreen(onConnect: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // TODO: Replace with QMQ logo — two headphones/earphones forming the Q's,
+        //       with the arc between them reading as the M (Quick Music Quiz)
         Text("Quick Music Quiz", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(12.dp))
         Text(
@@ -281,6 +283,8 @@ fun ConnectedScreen(
             .padding(horizontal = 32.dp, vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // TODO: Replace with QMQ logo — two headphones/earphones forming the Q's,
+        //       with the arc between them reading as the M (Quick Music Quiz)
         Text("Quick Music Quiz", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(Modifier.height(32.dp))
