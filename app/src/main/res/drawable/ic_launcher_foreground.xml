@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Material Design "music_note" icon scaled to fill the adaptive icon safe zone (18–90dp).
+    Original 24×24 path scaled ×3 and offset by +18 to center in the 108×108 canvas.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,27 v31.65 c-1.77,-1.02,-3.81,-1.65,-6,-1.65 c-6.63,0,-12,5.37,-12,12 s5.37,12,12,12 s12,-5.37,12,-12 V39 h12 V27 z" />
+</vector>
