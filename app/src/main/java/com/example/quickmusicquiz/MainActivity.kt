@@ -24,15 +24,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -166,6 +170,8 @@ fun QuizApp(viewModel: MainViewModel) {
     val albumArt           by viewModel.albumArt.collectAsState()
     val selectedPlaylistId  by viewModel.selectedPlaylistId.collectAsState()
     val customPlaylistInput by viewModel.customPlaylistInput.collectAsState()
+    val roundColorLong     by viewModel.roundColor.collectAsState()
+    val roundBgColor        = Color(roundColorLong)
 
     val context = LocalContext.current
 
@@ -181,24 +187,27 @@ fun QuizApp(viewModel: MainViewModel) {
 
     Box(Modifier.fillMaxSize()) {
         when (val state = gameState) {
-            is GameState.NotConnected   -> NotConnectedScreen(onConnect = { viewModel.startAuth() })
-            is GameState.Authenticating -> AuthenticatingScreen()
+            is GameState.NotConnected   -> NotConnectedScreen(bgColor = roundBgColor, onConnect = { viewModel.startAuth() })
+            is GameState.Authenticating -> AuthenticatingScreen(bgColor = roundBgColor)
             is GameState.Connected      -> ConnectedScreen(
                 viewModel           = viewModel,
+                bgColor             = roundBgColor,
                 isRemoteConnected   = isRemoteConnected,
                 errorMessage        = state.errorMessage,
                 selectedPlaylistId  = selectedPlaylistId,
                 customPlaylistInput = customPlaylistInput
             )
-            is GameState.LoadingTrack   -> LoadingScreen()
+            is GameState.LoadingTrack   -> LoadingScreen(bgColor = roundBgColor)
             is GameState.Playing        -> PlayingScreen(
                 state            = state,
+                bgColor          = roundBgColor,
                 isPlaybackPaused = isPlaybackPaused,
                 onTogglePause    = { if (isPlaybackPaused) viewModel.resumeGame() else viewModel.pauseGame() },
                 onSkipToAnswer   = { viewModel.skipToAnswer() }
             )
             is GameState.CountingDown   -> CountingDownScreen(
                 state                  = state,
+                bgColor                = roundBgColor,
                 isTimerPaused          = isTimerPaused,
                 isPlaybackPaused       = isPlaybackPaused,
                 albumArt               = albumArt,
@@ -215,7 +224,8 @@ fun QuizApp(viewModel: MainViewModel) {
                 onClick  = { viewModel.backToMenu() },
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(top = 40.dp, start = 8.dp)
+                    .padding(top = 40.dp, start = 8.dp),
+                colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
             ) {
                 Text("← Menu")
             }
@@ -226,37 +236,48 @@ fun QuizApp(viewModel: MainViewModel) {
 // ─── Screens ─────────────────────────────────────────────────────────────────────────
 
 @Composable
-fun NotConnectedScreen(onConnect: () -> Unit) {
+fun NotConnectedScreen(bgColor: Color, onConnect: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(bgColor)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         // TODO: Replace with QMQ logo — two headphones/earphones forming the Q's,
         //       with the arc between them reading as the M (Quick Music Quiz)
-        Text("Quick Music Quiz", style = MaterialTheme.typography.headlineMedium)
+        Text("Quick Music Quiz", style = MaterialTheme.typography.headlineMedium, color = Color.White)
         Spacer(Modifier.height(12.dp))
         Text(
             text = "Connect your Spotify Premium account to play.",
             style = MaterialTheme.typography.bodyLarge,
+            color = Color.White.copy(alpha = 0.8f),
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(32.dp))
-        Button(onClick = onConnect) {
+        Button(
+            onClick = onConnect,
+            colors  = ButtonDefaults.buttonColors(
+                containerColor = Color.White.copy(alpha = 0.2f),
+                contentColor   = Color.White
+            )
+        ) {
             Text("Connect with Spotify")
         }
     }
 }
 
 @Composable
-fun AuthenticatingScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+fun AuthenticatingScreen(bgColor: Color) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(bgColor),
+        contentAlignment = Alignment.Center
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = Color.White)
             Spacer(Modifier.height(16.dp))
-            Text("Opening Spotify login…")
+            Text("Opening Spotify login…", color = Color.White)
         }
     }
 }
@@ -264,6 +285,7 @@ fun AuthenticatingScreen() {
 @Composable
 fun ConnectedScreen(
     viewModel: MainViewModel,
+    bgColor: Color,
     isRemoteConnected: Boolean,
     errorMessage: String?,
     selectedPlaylistId: String?,
@@ -280,33 +302,33 @@ fun ConnectedScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(bgColor)
             .padding(horizontal = 32.dp, vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // TODO: Replace with QMQ logo — two headphones/earphones forming the Q's,
         //       with the arc between them reading as the M (Quick Music Quiz)
-        Text("Quick Music Quiz", style = MaterialTheme.typography.headlineMedium)
+        Text("Quick Music Quiz", style = MaterialTheme.typography.headlineMedium, color = Color.White)
 
         Spacer(Modifier.height(32.dp))
 
         // ── Playlist selection ────────────────────────────────────────────────────
-        Text("Playlist", style = MaterialTheme.typography.titleMedium)
+        Text("Playlist", style = MaterialTheme.typography.titleMedium, color = Color.White)
         Spacer(Modifier.height(8.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(Color.Black.copy(alpha = 0.2f))
         ) {
             LazyColumn(Modifier.fillMaxSize()) {
                 grouped.forEach { (category, items) ->
-                    // Category header row
                     item(key = category) {
                         Text(
                             text     = category,
                             style    = MaterialTheme.typography.labelMedium,
-                            color    = MaterialTheme.colorScheme.primary,
+                            color    = Color.White.copy(alpha = 0.6f),
                             modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 4.dp)
                         )
                     }
@@ -316,13 +338,17 @@ fun ConnectedScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                    else androidx.compose.ui.graphics.Color.Transparent
+                                    if (isSelected) Color.White.copy(alpha = 0.25f)
+                                    else Color.Transparent
                                 )
                                 .clickable { viewModel.selectPlaylist(playlist.id) }
                                 .padding(horizontal = 12.dp, vertical = 10.dp)
                         ) {
-                            Text(playlist.name, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                playlist.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.White
+                            )
                         }
                     }
                 }
@@ -337,13 +363,22 @@ fun ConnectedScreen(
             onValueChange = { viewModel.setCustomPlaylistInput(it) },
             label         = { Text("Or paste a playlist URL") },
             singleLine    = true,
-            modifier      = Modifier.fillMaxWidth()
+            modifier      = Modifier.fillMaxWidth(),
+            colors        = OutlinedTextFieldDefaults.colors(
+                focusedTextColor       = Color.White,
+                unfocusedTextColor     = Color.White,
+                focusedBorderColor     = Color.White.copy(alpha = 0.8f),
+                unfocusedBorderColor   = Color.White.copy(alpha = 0.4f),
+                focusedLabelColor      = Color.White.copy(alpha = 0.8f),
+                unfocusedLabelColor    = Color.White.copy(alpha = 0.5f),
+                cursorColor            = Color.White,
+            )
         )
 
         Spacer(Modifier.height(24.dp))
 
         // ── Clip duration ─────────────────────────────────────────────────────────
-        Text("Clip Duration", style = MaterialTheme.typography.titleMedium)
+        Text("Clip Duration", style = MaterialTheme.typography.titleMedium, color = Color.White)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             listOf(5, 10).forEach { seconds ->
@@ -361,7 +396,7 @@ fun ConnectedScreen(
         Spacer(Modifier.height(24.dp))
 
         // ── Start position ────────────────────────────────────────────────────────
-        Text("Start Position", style = MaterialTheme.typography.titleMedium)
+        Text("Start Position", style = MaterialTheme.typography.titleMedium, color = Color.White)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             FilterChip(
@@ -381,9 +416,9 @@ fun ConnectedScreen(
         // ── Error message ─────────────────────────────────────────────────────────
         if (errorMessage != null) {
             Text(
-                text  = errorMessage,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
+                text      = errorMessage,
+                color     = Color(0xFFFF6B6B),
+                style     = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(16.dp))
@@ -393,7 +428,13 @@ fun ConnectedScreen(
         Button(
             onClick  = { viewModel.startRound() },
             enabled  = isRemoteConnected && selectedPlaylistId != null,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors   = ButtonDefaults.buttonColors(
+                containerColor         = Color.White.copy(alpha = 0.2f),
+                contentColor           = Color.White,
+                disabledContainerColor = Color.White.copy(alpha = 0.08f),
+                disabledContentColor   = Color.White.copy(alpha = 0.4f)
+            )
         ) {
             Text("Start Round")
         }
@@ -403,19 +444,22 @@ fun ConnectedScreen(
             Text(
                 text  = "Connecting to Spotify app…",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
+                color = Color.White.copy(alpha = 0.5f)
             )
         }
     }
 }
 
 @Composable
-fun LoadingScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+fun LoadingScreen(bgColor: Color) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(bgColor),
+        contentAlignment = Alignment.Center
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = Color.White)
             Spacer(Modifier.height(16.dp))
-            Text("Loading track…")
+            Text("Loading track…", color = Color.White)
         }
     }
 }
@@ -423,6 +467,7 @@ fun LoadingScreen() {
 @Composable
 fun PlayingScreen(
     state: GameState.Playing,
+    bgColor: Color,
     isPlaybackPaused: Boolean,
     onTogglePause: () -> Unit,
     onSkipToAnswer: () -> Unit
@@ -430,33 +475,40 @@ fun PlayingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(bgColor)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("♫", style = MaterialTheme.typography.displayLarge)
+        Text("♫", style = MaterialTheme.typography.displayLarge, color = Color.White)
         Spacer(Modifier.height(16.dp))
         Text(
             text  = if (isPlaybackPaused) "Paused" else "Clip playing",
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.White
         )
         Spacer(Modifier.height(8.dp))
         Text(
             text  = "${state.secondsRemaining}s",
             style = MaterialTheme.typography.displayMedium,
-            color = MaterialTheme.colorScheme.primary
+            color = Color.White
         )
         Spacer(Modifier.height(32.dp))
         Button(
             onClick  = onTogglePause,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors   = ButtonDefaults.buttonColors(
+                containerColor = Color.White.copy(alpha = 0.2f),
+                contentColor   = Color.White
+            )
         ) {
             Text(if (isPlaybackPaused) "▶️  Resume" else "⏸️  Pause")
         }
         Spacer(Modifier.height(8.dp))
         TextButton(
             onClick  = onSkipToAnswer,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors   = ButtonDefaults.textButtonColors(contentColor = Color.White)
         ) {
             Text("Skip to Answer →")
         }
@@ -466,6 +518,7 @@ fun PlayingScreen(
 @Composable
 fun CountingDownScreen(
     state: GameState.CountingDown,
+    bgColor: Color,
     isTimerPaused: Boolean,
     isPlaybackPaused: Boolean,
     albumArt: Bitmap?,
@@ -475,9 +528,18 @@ fun CountingDownScreen(
     onRestart: () -> Unit,
     onSkip: () -> Unit
 ) {
+    // Reusable button color definitions for this screen's colored background.
+    val filledButtonColors = ButtonDefaults.buttonColors(
+        containerColor = Color.White.copy(alpha = 0.2f),
+        contentColor   = Color.White
+    )
+    val outlinedButtonColors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+    val outlinedBorder       = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(bgColor)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -495,39 +557,40 @@ fun CountingDownScreen(
                 Spacer(Modifier.height(16.dp))
             }
             Text(
-                text  = state.track.name,
-                style = MaterialTheme.typography.headlineMedium,
+                text      = state.track.name,
+                style     = MaterialTheme.typography.headlineMedium,
+                color     = Color.White,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text  = state.track.artist,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.secondary
+                color = Color.White.copy(alpha = 0.8f)
             )
             if (state.track.year != null) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text  = "${state.track.year}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.outline
+                    color = Color.White.copy(alpha = 0.6f)
                 )
             }
         } else {
-            Text("?", style = MaterialTheme.typography.displayLarge)
+            Text("?", style = MaterialTheme.typography.displayLarge, color = Color.White)
             Spacer(Modifier.height(8.dp))
             Text(
                 text  = "${state.secondsRemaining}s",
                 style = MaterialTheme.typography.displayMedium,
                 color = if (state.secondsRemaining <= 3)
-                    MaterialTheme.colorScheme.error
+                    Color(0xFFFF6B6B)  // light red warning, visible on all background colors
                 else
-                    MaterialTheme.colorScheme.primary
+                    Color.White
             )
             Text(
                 text  = "to answer",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.outline
+                color = Color.White.copy(alpha = 0.6f)
             )
         }
 
@@ -537,14 +600,17 @@ fun CountingDownScreen(
         if (!state.isRevealed) {
             Button(
                 onClick  = onToggleCountdownPause,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors   = filledButtonColors
             ) {
                 Text(if (isTimerPaused) "▶️  Resume Countdown" else "⏸️  Pause Countdown")
             }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick  = onReveal,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors   = outlinedButtonColors,
+                border   = outlinedBorder
             ) {
                 Text("Reveal Answer")
             }
@@ -553,21 +619,25 @@ fun CountingDownScreen(
         if (state.isRevealed) {
             Button(
                 onClick  = onTogglePlayback,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors   = filledButtonColors
             ) {
                 Text(if (isPlaybackPaused) "▶️  Resume" else "⏸  Pause")
             }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick  = onRestart,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors   = outlinedButtonColors,
+                border   = outlinedBorder
             ) {
                 Text("Start from Beginning")
             }
             Spacer(Modifier.height(8.dp))
             TextButton(
                 onClick  = onSkip,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors   = ButtonDefaults.textButtonColors(contentColor = Color.White)
             ) {
                 Text("Next Round →")
             }

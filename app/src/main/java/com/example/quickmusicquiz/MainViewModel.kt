@@ -104,6 +104,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _albumArt = MutableStateFlow<Bitmap?>(null)
     val albumArt: StateFlow<Bitmap?> = _albumArt.asStateFlow()
 
+    // A new color (packed ARGB Long) is picked from this palette at the start of each round.
+    private val roundColorPalette = listOf(
+        0xFF1565C0L, // blue
+        0xFF00695CL, // teal
+        0xFF6A1B9AL, // purple
+        0xFFC62828L, // red
+        0xFF2E7D32L, // green
+        0xFFE65100L, // orange
+        0xFFAD1457L, // pink
+        0xFF283593L, // indigo
+    )
+    private val _roundColor = MutableStateFlow(roundColorPalette.random())
+    val roundColor: StateFlow<Long> = _roundColor.asStateFlow()
+
     // Curated playlist catalogue shown on the config screen.
     val playlists: List<SpotifyPlaylist> = CURATED_PLAYLISTS
 
@@ -275,6 +289,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isPaused.value = false
         _isPlaybackPaused.value = false
         _albumArt.value = null
+        _roundColor.value = roundColorPalette.random()
 
         // viewModelScope: the coroutine is cancelled automatically when the ViewModel
         // is cleared (i.e. when the Activity is permanently finished).
@@ -387,6 +402,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _albumArt.value = null
         currentTrack = null
         playbackManager.pause()
+        _roundColor.value = roundColorPalette.random()
         _gameState.value = GameState.Connected()
     }
 
