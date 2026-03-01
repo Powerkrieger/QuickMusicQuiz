@@ -97,6 +97,5 @@ Deliberately simple — no DI, no navigation framework, no layering.
 
 ## Known issues / TODOs
 
-- App Remote connection only works after backgrounding and foregrounding the app on first launch after login — likely a timing issue with the PKCE redirect completing just before `onStart()` triggers `connect()`
 - Playlist ID and Client ID are hardcoded — could be made configurable in settings
 - SHA-1 fingerprint above is for debug builds only

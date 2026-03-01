@@ -124,12 +124,21 @@ class MainActivity : ComponentActivity() {
     /**
      * Checks if the intent carries the Spotify redirect URI
      * (quickmusicquiz://callback?code=...) and passes the code to the ViewModel.
+     *
+     * We also connect App Remote here immediately. The normal path (onStart) misses
+     * the first-launch case because the token exchange hasn't completed yet when
+     * onStart runs — so isAuthenticated() is still false at that point.
+     * App Remote does its own auth and doesn't need the PKCE token to connect.
      */
     private fun handleRedirectIntent(intent: Intent?) {
         val uri = intent?.data ?: return
         if (uri.scheme == "quickmusicquiz" && uri.host == "callback") {
             val code = uri.getQueryParameter("code") ?: return
             viewModel.handleAuthRedirect(code)
+            viewModel.playbackManager.connect(
+                onConnected = { viewModel.onAppRemoteConnected() },
+                onFailure   = { error -> viewModel.onAppRemoteFailure(error) }
+            )
         }
     }
 }

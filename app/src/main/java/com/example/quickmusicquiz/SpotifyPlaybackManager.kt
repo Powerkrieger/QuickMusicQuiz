@@ -57,10 +57,7 @@ class SpotifyPlaybackManager(
      * If the user has not yet authorized this app, Spotify will show an auth dialog
      * (because showAuthView = true).
      *
-     * TODO: On first launch, the connection only succeeds after the app is backgrounded
-     *       and foregrounded once. Investigate whether this is a timing issue with the
-     *       PKCE redirect completing just before onStart() triggers connect().
-     */
+*/
     fun connect(onConnected: () -> Unit, onFailure: (String) -> Unit) {
         // ConnectionParams identifies our app to the Spotify app
         val params = ConnectionParams.Builder(SpotifyAuthManager.CLIENT_ID)
