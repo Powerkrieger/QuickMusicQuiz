@@ -13,6 +13,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.URL
+import java.net.URLEncoder
 import javax.net.ssl.HttpsURLConnection
 import kotlin.coroutines.resume
 
@@ -25,9 +26,8 @@ data class TrackInfo(
     val name: String,
     val artist: String,
     val durationMs: Long,
-    val albumUri: String = "",    // used for year lookup via Web API
     val imageUriRaw: String = "", // used to fetch album art via App Remote imagesApi
-    val year: Int? = null
+    val year: Int? = null         // always null — Web API year lookup removed (403 without extended quota)
 )
 
 /**
@@ -42,8 +42,7 @@ data class TrackInfo(
  * which the App Remote SDK does not expose.
  */
 class SpotifyPlaybackManager(
-    private val context: Context,
-    private val authManager: SpotifyAuthManager
+    private val context: Context
 ) {
 
     // The live connection to the Spotify app. Null when disconnected.
@@ -128,12 +127,11 @@ class SpotifyPlaybackManager(
                 } else {
                     cont.resume(
                         TrackInfo(
-                            uri          = track.uri ?: "",
-                            name         = track.name ?: "Unknown",
-                            artist       = track.artist?.name ?: "Unknown",
-                            durationMs   = track.duration,
-                            albumUri     = track.album?.uri ?: "",
-                            imageUriRaw  = track.imageUri?.raw ?: ""
+                            uri         = track.uri ?: "",
+                            name        = track.name ?: "Unknown",
+                            artist      = track.artist?.name ?: "Unknown",
+                            durationMs  = track.duration,
+                            imageUriRaw = track.imageUri?.raw ?: ""
                         )
                     )
                 }
@@ -164,29 +162,27 @@ class SpotifyPlaybackManager(
     }
 
     /**
-     * Fetches the release year of an album from the Spotify Web API.
+     * Fetches the release year of a track via the iTunes Search API.
      *
-     * The albumUri comes from the App Remote PlayerState (e.g. "spotify:album:4LH4d3cOWNNsVw41Gqt2kv").
-     * We extract the ID and call /v1/albums/{id} to get the release_date field.
-     * Returns null silently if the call fails — the year is optional in the UI.
+     * No auth required — completely free and doesn't count against Spotify quota.
+     * Searches by artist + track name and reads the releaseDate from the first result.
+     * Returns null silently on failure — the year is optional in the UI.
      */
-    suspend fun getAlbumYear(albumUri: String): Int? = withContext(Dispatchers.IO) {
-        if (albumUri.isEmpty()) return@withContext null
-        if (!authManager.refreshTokenIfNeeded()) return@withContext null
-        val token = authManager.getAccessToken() ?: return@withContext null
-        val albumId = albumUri.removePrefix("spotify:album:")
-
+    suspend fun getTrackYear(trackName: String, artist: String): Int? = withContext(Dispatchers.IO) {
         try {
-            val connection = URL("https://api.spotify.com/v1/albums/$albumId")
+            val query = URLEncoder.encode("$artist $trackName", "UTF-8")
+            val connection = URL("https://itunes.apple.com/search?term=$query&entity=song&limit=5")
                 .openConnection() as HttpsURLConnection
-            connection.setRequestProperty("Authorization", "Bearer $token")
             connection.connectTimeout = 10_000
             connection.readTimeout    = 10_000
 
             if (connection.responseCode != 200) return@withContext null
-            val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-            // release_date is "YYYY", "YYYY-MM", or "YYYY-MM-DD" depending on precision
-            json.optString("release_date").split("-").firstOrNull()?.toIntOrNull()
+            val json    = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            val results = json.optJSONArray("results") ?: return@withContext null
+            if (results.length() == 0) return@withContext null
+
+            // releaseDate format: "2005-01-01T08:00:00Z" — take the year part
+            results.getJSONObject(0).optString("releaseDate").split("-").firstOrNull()?.toIntOrNull()
         } catch (e: Exception) {
             null
         }

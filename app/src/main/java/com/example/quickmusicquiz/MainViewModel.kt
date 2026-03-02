@@ -74,7 +74,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Expose managers so MainActivity can call connect/disconnect in lifecycle methods.
     val authManager     = SpotifyAuthManager(application)
-    val playbackManager = SpotifyPlaybackManager(application, authManager)  // authManager used for album year lookups
+    val playbackManager = SpotifyPlaybackManager(application)
 
     // Persists clip duration, start position, and the last selected playlist across restarts.
     private val configPrefs = application.getSharedPreferences("quiz_config", Context.MODE_PRIVATE)
@@ -314,8 +314,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            // Fetch release year and album art in parallel — both are optional.
-            val year     = playbackManager.getAlbumYear(track.albumUri)
+            // Fetch year (iTunes API) and album art (App Remote) in parallel — both optional.
+            val year     = playbackManager.getTrackYear(track.name, track.artist)
             val albumArt = playbackManager.getTrackImage(track.imageUriRaw)
             _albumArt.value = albumArt
             currentTrack = track.copy(year = year)
