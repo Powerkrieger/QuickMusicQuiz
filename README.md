@@ -99,3 +99,8 @@ Deliberately simple — no DI, no navigation framework, no layering.
 
 - Playlist ID and Client ID are hardcoded — could be made configurable in settings
 - SHA-1 fingerprint above is for debug builds only
+
+## AI - Notice
+
+- Code co-authored by Claude Code
+- Initial Prompt for Claude co-authored by GPT-5.2
