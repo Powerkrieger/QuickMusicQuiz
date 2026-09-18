@@ -14,3 +14,7 @@ app/build
 .externalNativeBuild
 .cxx
 local.properties
+
+# Release signing keystore — private key material, never commit.
+*.jks
+*.env

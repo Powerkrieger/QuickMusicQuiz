@@ -60,15 +60,15 @@ dependencies {
     // 3. Update the filename below to match the version you downloaded
     implementation(files("libs/spotify-app-remote-release-0.8.0.aar"))
     // Gson is required internally by the Spotify App Remote SDK
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.gson)
 
     // ─── ViewModel (Compose integration) ─────────────────────────────────────────────
     // lifecycle-viewmodel-compose provides viewModel() inside Composables
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     // ─── Coroutines ───────────────────────────────────────────────────────────────────
     // Adds Dispatchers.Main (Android's main/UI thread dispatcher)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation(libs.kotlinx.coroutines.android)
 
     // ─── Standard AndroidX ────────────────────────────────────────────────────────────
     implementation(libs.androidx.core.ktx)

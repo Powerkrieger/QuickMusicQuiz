@@ -2,6 +2,7 @@ package com.example.quickmusicquiz
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -47,6 +48,7 @@ class SpotifyPlaybackManager(
 
     // The live connection to the Spotify app. Null when disconnected.
     private var appRemote: SpotifyAppRemote? = null
+    private var connecting = false
 
     val isConnected: Boolean get() = appRemote?.isConnected == true
 
@@ -59,8 +61,20 @@ class SpotifyPlaybackManager(
      * If the user has not yet authorized this app, Spotify will show an auth dialog
      * (because showAuthView = true).
      *
-*/
+     * MainActivity.onStart() and the OAuth redirect handler can both try to (re)connect
+     * within moments of each other (returning from the Spotify login screen triggers both
+     * an onNewIntent and an onStart). The SDK's connect() isn't safe against overlapping
+     * calls — a second call tears down the first's in-flight handshake, which surfaces as
+     * SpotifyConnectionTerminatedException on one of the two callbacks — so guard here.
+     */
     fun connect(onConnected: () -> Unit, onFailure: (String) -> Unit) {
+        if (isConnected) {
+            onConnected()
+            return
+        }
+        if (connecting) return
+        connecting = true
+
         // ConnectionParams identifies our app to the Spotify app
         val params = ConnectionParams.Builder(SpotifyAuthManager.CLIENT_ID)
             .setRedirectUri(SpotifyAuthManager.REDIRECT_URI)
@@ -69,13 +83,18 @@ class SpotifyPlaybackManager(
 
         SpotifyAppRemote.connect(context, params, object : Connector.ConnectionListener {
             override fun onConnected(remote: SpotifyAppRemote) {
+                connecting = false
                 appRemote = remote
                 onConnected()
             }
 
             override fun onFailure(throwable: Throwable) {
+                connecting = false
                 appRemote = null
-                onFailure(throwable.localizedMessage ?: "Unknown Spotify error")
+                // The SDK often surfaces a null-message throwable — the exception's class name
+                // is what actually pins down the cause.
+                Log.e("SpotifyPlaybackManager", "App Remote connect() failed", throwable)
+                onFailure(throwable.localizedMessage ?: "Unknown Spotify error (${throwable.javaClass.simpleName})")
             }
         })
     }
@@ -87,6 +106,7 @@ class SpotifyPlaybackManager(
     fun disconnect() {
         appRemote?.let { SpotifyAppRemote.disconnect(it) }
         appRemote = null
+        connecting = false
     }
 
     // ─── Playback control ─────────────────────────────────────────────────────────────

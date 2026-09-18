@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -315,8 +317,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             // Fetch year (iTunes API) and album art (App Remote) in parallel — both optional.
-            val year     = playbackManager.getTrackYear(track.name, track.artist)
-            val albumArt = playbackManager.getTrackImage(track.imageUriRaw)
+            val (year, albumArt) = coroutineScope {
+                val yearDeferred = async { playbackManager.getTrackYear(track.name, track.artist) }
+                val artDeferred  = async { playbackManager.getTrackImage(track.imageUriRaw) }
+                yearDeferred.await() to artDeferred.await()
+            }
             _albumArt.value = albumArt
             currentTrack = track.copy(year = year)
 
