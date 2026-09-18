@@ -15,11 +15,15 @@ Under **Settings → Edit**, add:
 - **Android Package Fingerprint (SHA-1):** `3A:72:CE:FB:A5:96:66:48:DC:69:81:B6:96:B6:0C:4E:76:E7:99:00`
   *(This is the debug keystore fingerprint. Use your release keystore SHA-1 for production builds.)*
 
-### 2. Fill in your Client ID
-In `SpotifyAuthManager.kt`:
-```kotlin
-const val CLIENT_ID = "your_client_id_here"
-```
+### 2. Spotify Client ID
+The app reads `BuildConfig.SPOTIFY_CLIENT_ID` (see `SpotifyAuthManager.kt`). It comes from one of
+two places, whichever is set:
+- **CI builds** (GitHub Actions, see `.github/workflows/build.yml`) read it from the
+  `SPOTIFY_CLIENT_ID` repo secret.
+- **Local builds** read it from `local.properties` (gitignored, never committed):
+  ```
+  SPOTIFY_CLIENT_ID=your_client_id_here
+  ```
 
 ### 3. Set your playlist ID
 In `MainViewModel.kt`:
@@ -97,7 +101,6 @@ Deliberately simple — no DI, no navigation framework, no layering.
 
 ## Known issues / TODOs
 
-- Playlist ID and Client ID are hardcoded — could be made configurable in settings
 - SHA-1 fingerprint above is for debug builds only
 
 ## AI - Notice

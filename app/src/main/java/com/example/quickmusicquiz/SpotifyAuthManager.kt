@@ -28,11 +28,10 @@ import javax.net.ssl.HttpsURLConnection
 class SpotifyAuthManager(private val context: Context) {
 
     companion object {
-        // ─── TODO: fill in your own values ──────────────────────────────────────────
-        // Create an app at https://developer.spotify.com/dashboard, then:
-        //   • Copy the Client ID below
-        //   • Add "quickmusicquiz://callback" as a Redirect URI in the dashboard
-        const val CLIENT_ID = "dc4206d5fc80486babc6f19926a8ea7e"
+        // Client ID comes from local.properties (SPOTIFY_CLIENT_ID=...) or the CI secret, not
+        // from source — see README.md "Spotify Client ID". The Spotify app must list
+        // "quickmusicquiz://callback" as a Redirect URI.
+        val CLIENT_ID = BuildConfig.SPOTIFY_CLIENT_ID
         const val REDIRECT_URI = "quickmusicquiz://callback"
 
         // app-remote-control lets the App Remote SDK control Spotify playback.

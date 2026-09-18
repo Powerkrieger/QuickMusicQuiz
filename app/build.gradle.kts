@@ -1,6 +1,13 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
 }
 
 android {
@@ -50,6 +57,15 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    defaultConfig {
+        // CI (see .github/workflows/build.yml) sets this via the SPOTIFY_CLIENT_ID repo secret;
+        // local Android Studio builds fall back to local.properties. Same setup as AmelieMusikster.
+        val spotifyClientId = System.getenv("SPOTIFY_CLIENT_ID")
+            ?: localProperties.getProperty("SPOTIFY_CLIENT_ID", "")
+        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"$spotifyClientId\"")
     }
 }
 
