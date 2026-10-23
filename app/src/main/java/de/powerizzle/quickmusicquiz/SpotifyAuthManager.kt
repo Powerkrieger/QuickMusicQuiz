@@ -1,4 +1,4 @@
-package com.example.quickmusicquiz
+package de.powerizzle.quickmusicquiz
 
 import android.content.Context
 import android.content.SharedPreferences

@@ -1,4 +1,4 @@
-package com.example.quickmusicquiz
+package de.powerizzle.quickmusicquiz
 
 import android.content.Intent
 import android.graphics.Bitmap
@@ -51,7 +51,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.quickmusicquiz.ui.theme.QuickMusicQuizTheme
+import de.powerizzle.quickmusicquiz.ui.theme.QuickMusicQuizTheme
 
 /**
  * The single Activity for the whole app.

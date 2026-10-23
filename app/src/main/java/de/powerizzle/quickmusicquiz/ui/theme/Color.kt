@@ -1,4 +1,4 @@
-package com.example.quickmusicquiz.ui.theme
+package de.powerizzle.quickmusicquiz.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

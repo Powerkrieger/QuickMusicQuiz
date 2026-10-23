@@ -1,4 +1,4 @@
-package com.example.quickmusicquiz.ui.theme
+package de.powerizzle.quickmusicquiz.ui.theme
 
 import android.app.Activity
 import android.os.Build

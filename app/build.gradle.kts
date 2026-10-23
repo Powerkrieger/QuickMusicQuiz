@@ -11,7 +11,7 @@ val localProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.example.quickmusicquiz"
+    namespace = "de.powerizzle.quickmusicquiz"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -19,11 +19,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.quickmusicquiz"
+        applicationId = "de.powerizzle.quickmusicquiz"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

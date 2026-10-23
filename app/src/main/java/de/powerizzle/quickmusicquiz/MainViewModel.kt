@@ -1,4 +1,4 @@
-package com.example.quickmusicquiz
+package de.powerizzle.quickmusicquiz
 
 import android.app.Application
 import android.content.Context
