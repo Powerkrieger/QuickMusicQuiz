@@ -11,7 +11,7 @@ Go to https://developer.spotify.com/dashboard and create an app (or open your ex
 
 Under **Settings → Edit**, add:
 - **Redirect URI:** `quickmusicquiz://callback`
-- **Android Package Name:** `com.example.quickmusicquiz`
+- **Android Package Name:** `de.powerizzle.quickmusicquiz`
 - **Android Package Fingerprint (SHA-1):** `3A:72:CE:FB:A5:96:66:48:DC:69:81:B6:96:B6:0C:4E:76:E7:99:00`
   *(This is the debug keystore fingerprint. Use your release keystore SHA-1 for production builds.)*
 
@@ -107,3 +107,8 @@ Deliberately simple — no DI, no navigation framework, no layering.
 
 - Code co-authored by Claude Code
 - Initial Prompt for Claude co-authored by GPT-5.2
+
+## License
+
+MIT, see [LICENSE](LICENSE). The Spotify App Remote SDK in `app/libs/` is not covered by it; it is
+distributed under the Spotify Developer Terms.
